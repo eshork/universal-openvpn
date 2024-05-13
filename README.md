@@ -6,7 +6,7 @@ An s6 v3 [docker-mod][linuxserver/docker-mods] for [LinuxServer.io] containers t
 
 To use this mod, add the following environment variables to your [LinuxServer.io] container:
 
-In docker arguments, set an environment variable `DOCKER_MODS=eshork/universal-openvpn:latest` to enable.
+In docker arguments, set an environment variable `DOCKER_MODS=ghcr.io/eshork/universal-openvpn:latest` to enable.
 
 If adding multiple mods, enter them in an array separated by `|`, such as `DOCKER_MODS=user/repo:tag|user/repo:tag`
 
