@@ -10,29 +10,31 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.3
+      - uses: actions/checkout@v3
 
       - name: Build image
         run: |
-          docker build --no-cache -t ${{ github.sha }} \
+          docker build . --no-cache --tag ${{ github.sha }} \
            --label "org.opencontainers.image.source=https://github.com/eshork/universal-openvpn" \
            --label "org.opencontainers.image.description=openvpn docker-mod" \
-           --label "org.opencontainers.image.licenses=MIT" .
-
-      - name: Tag image
-        if: ${{ github.ref == format('refs/heads/{0}', env.BRANCH) && env.ENDPOINT != 'user/endpoint' }}
-        run: |
-          docker tag ${{ github.sha }} ghcr.io/${ENDPOINT}
-          docker tag ${{ github.sha }} ghcr.io/${ENDPOINT}:${{ github.sha }}
+           --label "org.opencontainers.image.licenses=MIT" \
+           --tag ghcr.io/${ENDPOINT}:$(echo $GITHUB_SHA | head -c7) \
+           --tag ghcr.io/${ENDPOINT}:$(echo ${{ github.sha }} \
+           --tag ghcr.io/${ENDPOINT}:latest
 
       - name: Login to GitHub Container Registry
-        if: ${{ github.ref == format('refs/heads/{0}', env.BRANCH) && env.ENDPOINT != 'user/endpoint' }}
-        run: |
-          echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u $CR_USER --password-stdin
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push tags to GitHub Container Registry
-        if: ${{ github.ref == format('refs/heads/{0}', env.BRANCH) && env.ENDPOINT != 'user/endpoint' }}
+      - name: Push image to GitHub
         run: |
-          docker push ghcr.io/${ENDPOINT}:${{ github.sha }}
-          docker push ghcr.io/${ENDPOINT}
+          docker push ghcr.io/${ENDPOINT}:$(echo ${{ github.sha }}
+          docker push ghcr.io/${ENDPOINT}:$(echo $GITHUB_SHA | head -c7)
 
+      - name: Push :latest image to GitHub
+        if: github.ref == 'refs/heads/master'
+        run: |
+          docker push ghcr.io/${ENDPOINT}:latest
