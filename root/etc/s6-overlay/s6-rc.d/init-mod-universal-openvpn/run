@@ -1,0 +1,17 @@
+#!/usr/bin/with-contenv bash
+
+if [ -f /usr/bin/apt ]; then
+    ## Ubuntu
+    echo "\
+        openvpn \
+        openresolv \
+        " >> /mod-repo-packages-to-install.list
+fi
+
+if [ -f /sbin/apk ]; then
+    # Alpine
+    echo "\
+        openvpn \
+        openresolv \
+        " >> /mod-repo-packages-to-install.list
+fi

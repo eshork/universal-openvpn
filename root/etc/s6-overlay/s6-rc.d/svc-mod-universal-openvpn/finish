@@ -1,0 +1,14 @@
+#!/usr/bin/with-contenv bash
+
+if [[ $OVPN_HALT_ON_FAILURE == "true" || $OVPN_HALT_ON_FAILURE == "1" ]]; then
+    echo "[OVPN_HALT_ON_FAILURE] VPN failure: Halting container"
+    halt # stop the container if the vpn is disconnected or fails to connect
+    exit 125 # tell s6 not to restart this service
+else
+    if [[ $OVPN_KILLSWITCH == "true" || $OVPN_KILLSWITCH == "1" ]]; then
+        # run $OVPN_ROUTE_KILLSWITCH to fix routes
+        /etc/openvpn/route-killswitch
+    fi
+fi
+
+exit 0

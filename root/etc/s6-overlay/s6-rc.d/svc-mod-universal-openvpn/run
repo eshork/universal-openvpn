@@ -1,0 +1,96 @@
+#!/usr/bin/with-contenv bash
+
+# echo "VPN IS DISABLED"
+# tail -f /dev/null # wait forever
+
+OVPN_OPTS=""
+
+
+# Wait for openvpn command to be available
+while ! command -v openvpn >/dev/null 2>&1; do
+    echo "Waiting for openvpn command to become available..."
+    sleep 1
+done
+
+# default config path
+if [[ -z $OVPN_CONFIG ]]; then
+    OVPN_CONFIG="/etc/openvpn/config"
+fi
+
+# default credentials path
+if [[ -z $OVPN_CREDENTIALS ]]; then
+    OVPN_CREDENTIALS="/etc/openvpn/credentials"
+    chmod 600 $OVPN_CREDENTIALS
+fi
+
+# ensure update-resolv-conf.sh script is ready
+OVPN_UPDATE_RESOLV_CONF="/etc/openvpn/update-resolv-conf"
+if [[ ! -f $OVPN_UPDATE_RESOLV_CONF ]]; then
+    echo "Installing $OVPN_UPDATE_RESOLV_CONF"
+    cp /defaults/update-resolv-conf $OVPN_UPDATE_RESOLV_CONF
+    chmod +x $OVPN_UPDATE_RESOLV_CONF
+fi
+
+# ensure route-killswitch.sh script is ready
+OVPN_ROUTE_KILLSWITCH="/etc/openvpn/route-killswitch"
+if [[ ! -f $OVPN_ROUTE_KILLSWITCH ]]; then
+    echo "Installing $OVPN_ROUTE_KILLSWITCH"
+    cp /defaults/route-killswitch $OVPN_ROUTE_KILLSWITCH
+    chmod +x $OVPN_ROUTE_KILLSWITCH
+fi
+
+if [[ -f $OVPN_CONFIG ]]; then
+    echo "Using openvpn config at $OVPN_CONFIG"
+    OVPN_OPTS+=" --config $OVPN_CONFIG"
+fi
+
+OVPN_OPTS+=" --status /tmp/openvpn-status.log 1 --status-version 1"
+OVPN_OPTS+=" --script-security 2"
+OVPN_OPTS+=" --up $OVPN_UPDATE_RESOLV_CONF --down $OVPN_UPDATE_RESOLV_CONF"
+
+if [[ -f $OVPN_CREDENTIALS ]]; then
+    OVPN_OPTS+=" --auth-user-pass $OVPN_CREDENTIALS"
+fi
+
+if [[ $OVPN_KILLSWITCH == "true" || $OVPN_KILLSWITCH == "1" ]]; then
+    OVPN_OPTS+=" --route-pre-down $OVPN_ROUTE_KILLSWITCH"
+fi
+
+# if OVPN_OPTS_ADD is set, append to OVPN_OPTS
+if [[ -n $OVPN_OPTS_ADD ]]; then
+    OVPN_OPTS+=" $OVPN_OPTS_ADD"
+fi
+
+# if OVPN_OPTS_OVERRIDE is set, override the OVPN_OPTS
+if [[ -n $OVPN_OPTS_OVERRIDE ]]; then
+    OVPN_OPTS="$OVPN_OPTS_OVERRIDE"
+fi
+
+# display final openvpn options
+echo "OVPN_OPTS=$OVPN_OPTS"
+
+# check if tun device exists, create if not
+if test -e "/dev/net/tun"; then
+    echo "Found TUN device: /dev/net/tun"
+else
+    # if OVPN_SPLIT_PRIVATE is set, add explicit routes to private network address spaces via current default gateway
+    # this is placed here because we only want to do this once, when the container starts and the routes are fresh (ovpn won't mess with routes it didn't create)
+    if [[ $OVPN_SPLIT_PRIVATE == "true" || $OVPN_SPLIT_PRIVATE == "1" ]]; then
+        echo "OVPN_SPLIT_PRIVATE enabled: preserving default gateway for private network addresses"
+        route add -net 192.168.0.0/16 gw $( route | grep default | awk '{print $2}' )
+        route add -net 10.0.0.0/8 gw $( route | grep default | awk '{print $2}' )
+        route add -net 172.16.0.0/12 gw $( route | grep default | awk '{print $2}' )
+    fi
+
+    if [[ $OVPN_KILLSWITCH == "true" || $OVPN_KILLSWITCH == "1" ]]; then
+        $OVPN_ROUTE_KILLSWITCH
+    fi
+
+    echo "Creating TUN device: /dev/net/tun"
+    mkdir -p /dev/net
+    mknod /dev/net/tun c 10 200
+    chmod 0666 /dev/net/tun
+fi
+
+# start openvpn
+exec openvpn $OVPN_OPTS

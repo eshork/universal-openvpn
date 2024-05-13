@@ -1,0 +1,30 @@
+#!/usr/bin/with-contenv bash
+#
+# Route Based VPN Killswitch
+# This script is designed to run before and after OpenVPN connects.
+# It stores the existing default gateway, preloads the remote VPN hosts, and then drops the default gateway.
+# This configuration will prevent any traffic destined to non-local networks from leaking outside of the VPN tunnel,
+# while still allowing the VPN tunnel to be established.
+# The VPN remote hosts should be defined within the OpenVPN configuration file by IP address.
+# DNS will be unreachable until the VPN tunnel is established unless the DNS server is on the local network.
+#
+# CAVEATS:
+# - Since DNS may be made unreachable, this script is not always compatible with OpenVPN configurations that use hostnames for remote hosts.
+
+if [[ $OVPN_KILLSWITCH == "true" || $OVPN_KILLSWITCH == "1" ]]; then
+    DEFAULT_GATEWAY_ORIG="/etc/openvpn/default_gateway.orig"
+    if [[ ! -f ${DEFAULT_GATEWAY_ORIG} ]]; then
+        echo "[OVPN_KILLSWITCH] Storing original default gateway within: ${DEFAULT_GATEWAY_ORIG}"
+        route | grep default | awk '{print $2}' > ${DEFAULT_GATEWAY_ORIG}
+    fi
+
+    echo "[OVPN_KILLSWITCH] Route-based killswitch enabled: dropping current default route & seeding remote VPN hosts"
+    ORIG_DEFAULT_GW=`cat ${DEFAULT_GATEWAY_ORIG}`
+    echo "[OVPN_KILLSWITCH] SEEDING REMOTE VPN HOSTS"
+    cat /etc/openvpn/config | grep "remote " | awk '{print $2}' | sort | uniq | xargs -i route add -host {} gw $ORIG_DEFAULT_GW metric 100
+    echo "[OVPN_KILLSWITCH] DROPPING DEFAULT GATEWAY"
+    route del default
+else
+    echo "[OVPN_KILLSWITCH] Taking no action. Route-based killswitch is disabled. Set OVPN_KILLSWITCH=true to enable"
+fi
+exit 0

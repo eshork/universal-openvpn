@@ -1,0 +1,33 @@
+# This docker-compose usage example applies universal-openvpn to a deluge container
+---
+services:
+  deluge:
+    image: linuxserver/deluge:latest
+    container_name: deluge
+    environment:
+      - TZ=UTC  # Set your timezone here
+      - DOCKER_MODS=eshork/universal-openvpn
+      # - OVPN_CONFIG=/etc/openvpn/config # default path to the OpenVPN config file that YOU provided, change if needed
+      # - OVPN_CREDENTIALS=/etc/openvpn/credentials # path to the OpenVPN credentials file that YOU provided, change or remove as needed
+      - OVPN_HALT_ON_FAILURE=true # Halt the container if the OpenVPN process fails, optional but recommended if you are paranoid
+      - OVPN_KILLSWITCH=1 # Enable the routing killswitch, optional but recommended if you are paranoid
+      # - OVPN_SPLIT_PRIVATE=1 # Preserve routing to multi-hop private networks, recommend you don't use this if you don't already know you need it
+
+    volumes:
+      - ./deluge-config:/config # long-lived Deluge configuration folder
+      - ./downloads:/downloads # downloads location folder
+      - ./credentials:/etc/openvpn/credentials # place your OpenVPN credentials file here (username and password on separate lines)
+      - ./MYVPN.ovpn:/etc/openvpn/config # place your OpenVPN config file here (usually your VPN provider will provide an .ovpn file)
+    ports:
+      - 8112:8112
+      - 6881-6891:6881-6891
+    cap_add: # Add these capabilities to the container so that it can run OpenVPN
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_ADMIN
+      - SYS_PTRACE
+      - IPC_LOCK
+      - SYS_BOOT
+      - SYS_TTY_CONFIG
+      - MAC_OVERRIDE
+      - MKNOD
