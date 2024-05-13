@@ -14,7 +14,7 @@ jobs:
 
       - name: Build image
         run: |
-          docker build . --no-cache --tag ${{ github.sha }} \
+          docker build . --no-cache \
            --label "org.opencontainers.image.source=https://github.com/eshork/universal-openvpn" \
            --label "org.opencontainers.image.description=openvpn docker-mod" \
            --label "org.opencontainers.image.licenses=MIT" \
