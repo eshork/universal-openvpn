@@ -6,7 +6,7 @@ services:
     container_name: deluge
     environment:
       - TZ=UTC  # Set your timezone here
-      - DOCKER_MODS=eshork/universal-openvpn
+      - DOCKER_MODS=ghcr.io/eshork/universal-openvpn:latest
       # - OVPN_CONFIG=/etc/openvpn/config # default path to the OpenVPN config file that YOU provided, change if needed
       # - OVPN_CREDENTIALS=/etc/openvpn/credentials # path to the OpenVPN credentials file that YOU provided, change or remove as needed
       - OVPN_HALT_ON_FAILURE=true # Halt the container if the OpenVPN process fails, optional but recommended if you are paranoid
