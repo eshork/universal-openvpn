@@ -19,7 +19,7 @@ jobs:
            --label "org.opencontainers.image.description=openvpn docker-mod" \
            --label "org.opencontainers.image.licenses=MIT" \
            --tag ghcr.io/${ENDPOINT}:$(echo $GITHUB_SHA | head -c7) \
-           --tag ghcr.io/${ENDPOINT}:$(echo ${{ github.sha }} \
+           --tag ghcr.io/${ENDPOINT}:${{ github.sha }} \
            --tag ghcr.io/${ENDPOINT}:latest
 
       - name: Login to GitHub Container Registry
@@ -31,7 +31,7 @@ jobs:
 
       - name: Push image to GitHub
         run: |
-          docker push ghcr.io/${ENDPOINT}:$(echo ${{ github.sha }}
+          docker push ghcr.io/${ENDPOINT}:${{ github.sha }}
           docker push ghcr.io/${ENDPOINT}:$(echo $GITHUB_SHA | head -c7)
 
       - name: Push :latest image to GitHub
