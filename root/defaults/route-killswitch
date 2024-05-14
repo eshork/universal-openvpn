@@ -15,7 +15,7 @@ if [[ $OVPN_KILLSWITCH == "true" || $OVPN_KILLSWITCH == "1" ]]; then
     DEFAULT_GATEWAY_ORIG="/etc/openvpn/default_gateway.orig"
     if [[ ! -f ${DEFAULT_GATEWAY_ORIG} ]]; then
         echo "[OVPN_KILLSWITCH] Storing original default gateway within: ${DEFAULT_GATEWAY_ORIG}"
-        route | grep default | awk '{print $2}' > ${DEFAULT_GATEWAY_ORIG}
+        route -n | grep ^0.0.0.0 | grep -v tun | awk '{print $2}' > ${DEFAULT_GATEWAY_ORIG}
     fi
 
     echo "[OVPN_KILLSWITCH] Route-based killswitch enabled: dropping current default route & seeding remote VPN hosts"
