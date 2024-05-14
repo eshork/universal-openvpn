@@ -77,9 +77,9 @@ else
     # this is placed here because we only want to do this once, when the container starts and the routes are fresh (ovpn won't mess with routes it didn't create)
     if [[ $OVPN_SPLIT_PRIVATE == "true" || $OVPN_SPLIT_PRIVATE == "1" ]]; then
         echo "OVPN_SPLIT_PRIVATE enabled: preserving default gateway for private network addresses"
-        route add -net 192.168.0.0/16 gw $( route | grep default | awk '{print $2}' )
-        route add -net 10.0.0.0/8 gw $( route | grep default | awk '{print $2}' )
-        route add -net 172.16.0.0/12 gw $( route | grep default | awk '{print $2}' )
+        route add -net 192.168.0.0/16 gw $( route -n | grep ^0.0.0.0 | grep -v tun | awk '{print $2}' )
+        route add -net 10.0.0.0/8 gw $( route -n | grep ^0.0.0.0 | grep -v tun | awk '{print $2}' )
+        route add -net 172.16.0.0/12 gw $( route -n | grep ^0.0.0.0 | grep -v tun | awk '{print $2}' )
     fi
 
     if [[ $OVPN_KILLSWITCH == "true" || $OVPN_KILLSWITCH == "1" ]]; then
